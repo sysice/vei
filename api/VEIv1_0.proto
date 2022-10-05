@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option go_package = "/VEIv1_0";
+
+package VEIv1_0;
+
+service VEIv1_0{
+    rpc PublishImage (stream PubImageParams) returns (ErrorResponse) {}
+    rpc SubscribeImage (SubImageParams) returns (stream ImageData) {}
+    rpc DeleteCamera (CameraID) returns (ErrorResponse) {}
+    rpc PublishVisionOutput (stream PubVisionParams) returns (ErrorResponse) {}
+    rpc SubscribeVisionOutput (SubVisionParams) returns (stream VisionOutput){}
+    rpc PublishToCloud (stream PubCloudParams) returns (ErrorResponse){}
+    rpc ListCameras (google.protobuf.Empty) returns (Cameras) {}
+    rpc ListApplications (google.protobuf.Empty) returns (Applications) {}
+    rpc ListClouds (google.protobuf.Empty) returns (Clouds) {}
+}
+
+message PubImageParams{
+    string cameraID = 1;
+    bytes image = 2;
+    string timestamp = 3;
+}
+
+message SubImageParams{
+    string cameraID = 1;
+}
+
+message ImageData{
+    bytes image = 1; 
+    string timestamp = 2; 
+    string error = 3;
+}
+
+message CameraID{
+    string cameraID = 1;
+}
+
+message PubVisionParams{
+    string visionAppName = 1; 
+    repeated string visionOutput = 2; 
+    string timestamp = 3;
+}
+
+message SubVisionParams{
+    string visionAppName = 1;
+}
+
+message VisionOutput{
+    repeated string visionOutput = 1; 
+    string timestamp = 2;
+    string error = 3;  
+}
+
+message PubCloudParams{
+    string analyticsName = 1; 
+    repeated string analyticalOutput = 2; 
+    string timestamp = 3; 
+	string cloudProvider = 4;
+}
+
+message ErrorResponse {
+    string errorMsg = 1;
+}
+
+message Cameras{
+    repeated string availableCams = 1; 
+}
+
+message Applications{
+    repeated string availApps = 1; 
+}
+
+message Clouds{
+    repeated string availClouds = 1; 
+}
+
+
+/* protoc commands
+python: python3 -m grpc_tools.protoc --proto_path=. ./VEI_api.proto --python_out=. --grpc_python_out=.
+go: protoc --go_out=. --go_opt=paths=source_relative  --go-grpc_out=. --go-grpc_opt=paths=source_relative VEIv1_0.proto
+*/
+
