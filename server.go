@@ -2,17 +2,18 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
+
+	//	"crypto/tls"
+	//	"crypto/x509"
+	//	"encoding/json"
 	"errors"
-	"fmt"
+	//	"fmt"
 	"io"
-	"io/ioutil"
+	//	"io/ioutil"
 	"log"
 	"net"
 	"sync"
-	"time"
 
 	VEIv1_0 "VEIv1.0/api"
 	"google.golang.org/grpc"
@@ -22,7 +23,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iotdataplane"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/golang-jwt/jwt"
+
+	//	"github.com/golang-jwt/jwt"
 	"github.com/nats-io/nats.go"
 )
 
@@ -37,6 +39,7 @@ const (
 var availCameras = make([]string, 0)
 var availApplications = make([]string, 0)
 var availClouds = make([]string, 0)
+
 var iotCore *iotdataplane.IoTDataPlane
 var mqttCli mqtt.Client
 var topic string
@@ -86,105 +89,107 @@ func connectToAWSIoT() *iotdataplane.IoTDataPlane {
 
 }
 
+/*
 // GCP IoT
-func connectToGCPIoT() (mqtt.Client, string) {
-	const (
-		mqttBrokerURL   = "tls://mqtt.googleapis.com:8883"
-		protocolVersion = 4
-	)
 
-	//Configurations for tls -- using Google's root CA cert
-	certpool := x509.NewCertPool()
-	pemCerts, err := ioutil.ReadFile("./gcp/roots.pem")
-	if err == nil {
-		certpool.AppendCertsFromPEM(pemCerts)
-	} else {
-		log.Fatal(err)
-	}
+	func connectToGCPIoT() (mqtt.Client, string) {
+		const (
+			mqttBrokerURL   = "tls://mqtt.googleapis.com:8883"
+			protocolVersion = 4
+		)
 
-	config := &tls.Config{
-		RootCAs:            certpool,
-		ClientAuth:         tls.NoClientCert,
-		ClientCAs:          nil,
-		InsecureSkipVerify: true,
-		Certificates:       []tls.Certificate{},
-		MinVersion:         tls.VersionTLS12,
-	}
+		//Configurations for tls -- using Google's root CA cert
+		certpool := x509.NewCertPool()
+		pemCerts, err := ioutil.ReadFile("./gcp/roots.pem")
+		if err == nil {
+			certpool.AppendCertsFromPEM(pemCerts)
+		} else {
+			log.Fatal(err)
+		}
 
-	// As set up on IoT Core console
-	projectID := "visionedgeiot"
-	registryID := "edge-registry"
-	region := "us-central1"   // Do not change
-	deviceID := "soundgarden" // Name of Edge server
+		config := &tls.Config{
+			RootCAs:            certpool,
+			ClientAuth:         tls.NoClientCert,
+			ClientCAs:          nil,
+			InsecureSkipVerify: true,
+			Certificates:       []tls.Certificate{},
+			MinVersion:         tls.VersionTLS12,
+		}
 
-	//Create clientID
-	clientID := fmt.Sprintf("projects/%s/locations/%s/registries/%s/devices/%s", projectID, region, registryID, deviceID)
+		// As set up on IoT Core console
+		projectID := "visionedgeiot"
+		registryID := "edge-registry"
+		region := "us-central1"   // Do not change
+		deviceID := "soundgarden" // Name of Edge server
 
-	// onConnect defines the on connect handler which resets backoff variables.
-	var onConnect mqtt.OnConnectHandler = func(client mqtt.Client) {
-		log.Printf("Client connected: %t\n", client.IsConnected())
-	}
+		//Create clientID
+		clientID := fmt.Sprintf("projects/%s/locations/%s/registries/%s/devices/%s", projectID, region, registryID, deviceID)
 
-	// onMessage defines the message handler for the mqtt client.
-	var onMessage mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-		log.Printf("Topic: %s\n", msg.Topic())
-		log.Printf("Message: %s\n", msg.Payload())
-	}
+		// onConnect defines the on connect handler which resets backoff variables.
+		var onConnect mqtt.OnConnectHandler = func(client mqtt.Client) {
+			log.Printf("Client connected: %t\n", client.IsConnected())
+		}
 
-	// onDisconnect defines the connection lost handler for the mqtt client.
-	var onDisconnect mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-		log.Println("Client disconnected")
-	}
+		// onMessage defines the message handler for the mqtt client.
+		var onMessage mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+			log.Printf("Topic: %s\n", msg.Topic())
+			log.Printf("Message: %s\n", msg.Payload())
+		}
 
-	// Create new JSON Web Token using RS256
-	jwtToken := jwt.New(jwt.SigningMethodRS256)
-	jwtToken.Claims = jwt.StandardClaims{
-		Audience:  projectID,
-		IssuedAt:  time.Now().Unix(),
-		ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
-	}
+		// onDisconnect defines the connection lost handler for the mqtt client.
+		var onDisconnect mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
+			log.Println("Client disconnected")
+		}
 
-	keyBytes, err := ioutil.ReadFile("./gcp/rsa_private.pem")
-	if err != nil {
-		log.Fatal(err)
-	}
+		// Create new JSON Web Token using RS256
+		jwtToken := jwt.New(jwt.SigningMethodRS256)
+		jwtToken.Claims = jwt.StandardClaims{
+			Audience:  projectID,
+			IssuedAt:  time.Now().Unix(),
+			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
+		}
 
-	privKey, err := jwt.ParseRSAPrivateKeyFromPEM(keyBytes)
-	if err != nil {
-		log.Fatal(err)
-	}
+		keyBytes, err := ioutil.ReadFile("./gcp/rsa_private.pem")
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	jwtTLSPass, err := jwtToken.SignedString(privKey)
-	if err != nil {
-		log.Fatal(err)
-	}
+		privKey, err := jwt.ParseRSAPrivateKeyFromPEM(keyBytes)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	//options for creating a new mqtt client
-	opts := mqtt.NewClientOptions()
-	opts.AddBroker(mqttBrokerURL)
-	opts.SetClientID(clientID).SetTLSConfig(config)
-	opts.SetUsername("unused")
-	opts.SetPassword(jwtTLSPass)
-	opts.SetProtocolVersion(protocolVersion)
-	opts.SetOnConnectHandler(onConnect)
-	opts.SetDefaultPublishHandler(onMessage)
-	opts.SetConnectionLostHandler(onDisconnect)
+		jwtTLSPass, err := jwtToken.SignedString(privKey)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	//Create new mqtt client
-	mqttCli := mqtt.NewClient(opts)
+		//options for creating a new mqtt client
+		opts := mqtt.NewClientOptions()
+		opts.AddBroker(mqttBrokerURL)
+		opts.SetClientID(clientID).SetTLSConfig(config)
+		opts.SetUsername("unused")
+		opts.SetPassword(jwtTLSPass)
+		opts.SetProtocolVersion(protocolVersion)
+		opts.SetOnConnectHandler(onConnect)
+		opts.SetDefaultPublishHandler(onMessage)
+		opts.SetConnectionLostHandler(onDisconnect)
 
-	//connecting
-	if connectedToken := mqttCli.Connect(); connectedToken.Wait() && connectedToken.Error() != nil {
-		log.Println("Failed to connect client.")
-	}
+		//Create new mqtt client
+		mqttCli := mqtt.NewClient(opts)
 
-	//Set topic to be /devices/deviceID/events --> Will publish to topic based on default topic in the device on GCP
-	topic := fmt.Sprintf("/devices/%v/events", deviceID)
+		//connecting
+		if connectedToken := mqttCli.Connect(); connectedToken.Wait() && connectedToken.Error() != nil {
+			log.Println("Failed to connect client.")
+		}
 
-	return mqttCli, topic
+		//Set topic to be /devices/deviceID/events --> Will publish to topic based on default topic in the device on GCP
+		topic := fmt.Sprintf("/devices/%v/events", deviceID)
+
+		return mqttCli, topic
 
 }
-
+*/
 func (s *server) PublishImage(stream VEIv1_0.VEIv1_0_PublishImageServer) error {
 
 	//error message
@@ -383,7 +388,6 @@ func (s *server) SubscribeVisionOutput(in *VEIv1_0.SubVisionParams, stream VEIv1
 }
 
 func (s *server) PublishToCloud(stream VEIv1_0.VEIv1_0_PublishToCloudServer) error {
-
 	errMsg := &VEIv1_0.ErrorResponse{}
 
 	for {
@@ -398,6 +402,8 @@ func (s *server) PublishToCloud(stream VEIv1_0.VEIv1_0_PublishToCloudServer) err
 		timestamp := req.GetTimestamp()
 		cloudProvider := req.GetCloudProvider()
 
+		log.Println(analyticsName)
+		log.Println(timestamp)
 		log.Println(cloudProvider)
 
 		if !checkApplications(analyticsName) {
@@ -418,22 +424,22 @@ func (s *server) PublishToCloud(stream VEIv1_0.VEIv1_0_PublishToCloudServer) err
 				Payload: completeOutput,
 				Qos:     aws.Int64(1),
 			}
-
 			iotCore.Publish(publishingParams)
 
 		} else if cloudProvider == "GCP" {
-			//Publish with QoS = 0, Retained = false, payload
-			publishedToken := mqttCli.Publish(topic, 0, false, completeOutput)
-			publishedToken.Wait()
-			if publishedToken.Error() != nil {
-				log.Fatal(publishedToken.Error())
-			}
+			/*
+				//Publish with QoS = 0, Retained = false, payload
+				publishedToken := mqttCli.Publish(topic, 0, false, completeOutput)
+				publishedToken.Wait()
+				if publishedToken.Error() != nil {
+					log.Fatal(publishedToken.Error())
+				}
+			*/
 
 		} else {
 			log.Fatal("Cloud provider specified not supported")
 
 		}
-
 	}
 }
 
@@ -493,9 +499,10 @@ func main() {
 
 	// Connnect to cloud service procviders
 	iotCore = connectToAWSIoT()
-	mqttCli, topic = connectToGCPIoT()
+	log.Println("Connected to AWS")
+	//mqttCli, topic = connectToGCPIoT()
 
-	log.Println("Connected to AWS and GCP")
+	//log.Println("Connected to GCP")
 
 	if err := s.Serve(listen); err != nil {
 		log.Fatalf("failed to serve: %v", err)

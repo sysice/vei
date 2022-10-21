@@ -24,12 +24,11 @@ def YOLO(im, frameNum, imageTimestamp, cloud):
     imagesFolder = IMAGES_FOLDER
     im_path = os.path.join(imagesFolder, 'Frame'+ str(frameNum) + '.jpg')
     cv2.imwrite(im_path, im)
-
+    print(cloud)
     image = {'image_file': open(im_path, 'rb')}
     data = {'threshold': '0.25'}
     yolo_url = 'http://localhost:8080/'
     url = yolo_url + "detect"
-
     r = requests.post(url, files=image, data=data)
     if r.status_code == 200:
         details = {"object": None, "prob": None}
@@ -40,6 +39,7 @@ def YOLO(im, frameNum, imageTimestamp, cloud):
             print(s)
             req = VEI.PubCloudParams(analyticsName = "camera1", analyticalOutput = s, timestamp = imageTimestamp, cloudProvider = cloud)
             yield req
+    
 
 def main():
     frameNum = 0

@@ -79,7 +79,7 @@ message Clouds{
 
 
 /* protoc commands
-python: python3 -m grpc_tools.protoc --proto_path=. ./VEI_api.proto --python_out=. --grpc_python_out=.
+python: python3 -m grpc_tools.protoc --proto_path=. ./VEIv1_0.proto --python_out=. --grpc_python_out=.
 go: protoc --go_out=. --go_opt=paths=source_relative  --go-grpc_out=. --go-grpc_opt=paths=source_relative VEIv1_0.proto
 */
 

@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # bind the client and the server
     stub = VEI_grpc.VEIv1_0Stub(channel)
    
-    stub.PublishImage(publish_request(2))
+    stub.PublishImage(publish_request(2)) # Specify the number of frames to be captured
 
   
     
